@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ROSCO PEDAGOGICO</title>
+    <style>
+        /* 🎨 Estilos CSS */
+        :root {
+            /* Tamaños por defecto para escritorio */
+            --rosco-size: 400px;
+            --circle-size: 30px;
+            --main-color: #007bff;
+            --correct-color: #28a745;
+            --incorrect-color: #dc3545;
+            --active-color: #ffc107;
+            --text-color: #333;
+        }
+
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            color: var(--text-color);
+            
+            /* --- 🖼️ ESTILOS PARA LA IMAGEN DE FONDO CENTRADA --- */
+            /* Nota: Si no tienes el archivo PET.jpg, este fondo no se mostrará. */
+            background-image: url('PET.png'); 
+            background-size: cover;          
+            background-position: center;     
+            background-repeat: no-repeat;    
+            background-attachment: fixed;    
+            /* ----------------------------------------------------- */
+        }
+        
+        /* Contenedor principal del Rosco y la Consigna */
+        .game-wrapper {
+            display: flex;
+            justify-content: center;
+            align-items: flex-start; 
+            gap: 40px; 
+            width: 90%;
+            max-width: 1200px; 
+            
+            /* *** CAMBIO CLAVE AQUÍ: Fondo completamente transparente *** */
+            background-color: transparent; 
+            
+            padding: 20px;
+            border-radius: 10px;
+            /* Se mantiene una sombra tenue para separar los elementos del fondo */
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .rosco-container {
+            position: relative;
+            width: var(--rosco-size);
+            height: var(--rosco-size);
+            flex-shrink: 0; 
+            margin-top: 20px;
+        }
+
+        .letter-circle {
+            position: absolute;
+            width: var(--circle-size);
+            height: var(--circle-size);
+            background-color: var(--main-color);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-weight: bold;
+            font-size: 1.1em;
+            cursor: pointer;
+            border: 2px solid transparent; 
+            transition: background-color 0.3s, transform 0.1s, border-color 0.3s;
+            /* Sombra en el círculo para que destaque del fondo */
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4); 
+        }
+
+        .letter-circle:hover {
+            transform: scale(1.1);
+        }
+
+        /* Clases de estado */
+        .correct { background-color: var(--correct-color); }
+        .incorrect { background-color: var(--incorrect-color); }
+        .current {
+            background-color: var(--active-color);
+            color: var(--text-color);
+            border-color: var(--text-color);
+            box-shadow: 0 0 10px var(--active-color);
+        }
+
+        /* Controles centrales (Para la Nota) */
+        .center-controls {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            width: 80%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        /* Estilos para la Nota central */
+        #currentGradeDisplay {
+            font-size: 2.5em; /* Tamaño grande para destacar */
+            color: var(--text-color);
+            /* Importante: Mantener un fondo blanco para que el texto de la Nota se lea bien */
+            background-color: rgba(255, 255, 255, 0.95); 
+            padding: 10px 20px;
+            border-radius: 10px;
+            border: 3px solid var(--main-color);
+            font-weight: bold;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Contenedor de la consigna y ahora también del input de respuesta */
+        .clue-sidebar {
+            width: 350px;
+            padding: 20px;
+            /* Mantener el sidebar blanco para legibilidad del texto de la consigna */
+            background-color: #fff;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            min-height: 200px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between; 
+            flex-grow: 1; 
+        }
+
+        .clue-content {
+            flex-grow: 1;
+            margin-bottom: 20px;
+        }
+
+        .clue-sidebar h3 {
+            font-size: 1.4em;
+            margin-bottom: 20px;
+            line-height: 1.4;
+        }
+        
+        .clue-sidebar p {
+            font-size: 1.1em;
+            font-weight: bold;
+            color: var(--main-color);
+            border-top: 1px solid #eee;
+            padding-top: 10px;
+            margin-bottom: 20px;
+        }
+
+        /* Estilos para el Input y Botón de Respuesta (dentro de .clue-sidebar) */
+        .response-controls {
+            padding-top: 10px;
+            border-top: 1px solid #ccc;
+        }
+
+        .response-controls input, .response-controls button {
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            width: 100%;
+            box-sizing: border-box;
+            font-size: 1em;
+        }
+
+        .response-controls button {
+            background-color: var(--main-color);
+            color: white;
+            cursor: pointer;
+            border: none;
+            transition: background-color 0.3s;
+        }
+        
+        .response-controls button:hover {
+            background-color: #0056b3;
+        }
+
+        /* 📱 MEDIA QUERY PARA PANTALLAS PEQUEÑAS (Mobile) */
+        @media (max-width: 800px) {
+            .game-wrapper {
+                flex-direction: column;
+                align-items: center;
+                gap: 20px;
+                /* Opcional: En móvil se le puede poner un fondo semitransparente para aislar el contenido si el fondo de imagen es muy cargado. */
+                background-color: rgba(255, 255, 255, 0.95); 
+            }
+
+            :root {
+                --rosco-size-mobile: 85vw;
+                --circle-size-mobile: 7vw;
+            }
+            .rosco-container {
+                width: var(--rosco-size-mobile);
+                height: var(--rosco-size-mobile);
+                margin-top: 0;
+            }
+            .letter-circle {
+                width: var(--circle-size-mobile);
+                height: var(--circle-size-mobile);
+                font-size: 0.9em;
+            }
+
+            .clue-sidebar {
+                width: 90%;
+                order: -1; 
+            }
+            
+            .center-controls h2 {
+                font-size: 1.8em; /* Ajuste para móvil */
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-wrapper">
+        
+        <div class="clue-sidebar">
+            <div class="clue-content">
+                <h3 id="currentClue">¡Pulsa una letra para empezar!</h3>
+                <p>Con la letra: <strong id="currentLetter"></strong></p>
+            </div>
+
+            <div class="response-controls">
+                <input type="text" id="answerInput" placeholder="Introduce tu respuesta">
+                <button onclick="checkAnswer()">Responder</button>
+            </div>
+        </div>
+
+        <div class="rosco-container" id="roscoContainer">
+            <div class="center-controls">
+                <h2 id="currentGradeDisplay">Nota: N/A</h2>
+            </div>
+            </div>
+
+    </div>
+
+    <script>
+        /* ⚙️ Lógica JavaScript (Con el cálculo de Nota / 10 sobre 26 letras) */
+
+        // Lista de preguntas y respuestas (26 letras)
+        const roscoData = [
+            { 
+                letter: 'A', 
+                clue: "Etimológicamente, la palabra procede de educare, que implica un proceso de alimentación o de acrecentamiento que se ejerce desde fuera. (Pedagogía General)", 
+                answer: "HETEROEDUCACION" 
+            },
+            { 
+                letter: 'B', 
+                clue: "Filósofo inglés cuya influencia notó Wolfgang Ratke al volver de Inglaterra, y cuya nueva mentalidad, fue recogida como fundamento de la pedagogía de Comenio. (Abbagnano y Visalberghi)", 
+                answer: "BACON" 
+            },
+            { 
+                letter: 'C', 
+                clue: "En la teoría psicológica de Herbart, es el fenómeno que se produce cuando las ideas que llegan al umbral de la conciencia son diferentes, se complican y se enredan. (Pedagogía Eje 1)", 
+                answer: "COMPLEXION" 
+            },
+            { 
+                letter: 'D', 
+                clue: "Fase del proceso educativo que surge cuando el desarrollo no se deja a su libre albedrío, sino que se guía para controlarlo o estimularlo. (Pedagogía General)", 
+                answer: "DISCIPLINA" 
+            },
+            { 
+                letter: 'E', 
+                clue: "La Pedagogía por Objetivos ha establecido una relación deliberada de observancia de metas en su afán de alcanzar este concepto, medible y cuantificable en la enseñanza. (El modelo de pedagogía por objetivos)", 
+                answer: "EFICACIA" 
+            },
+            { 
+                letter: 'F', 
+                clue: "En el nivel de Evaluación de la Taxonomía de Bloom, es el proceso que consiste en la identificación de conclusiones y el respaldo de enunciados, utilizando juicios basados en evidencia interna o externa. (Niveles de la taxonomía de Bloom)", 
+                answer: "FUNDAMENTACION" 
+            },
+            { 
+                letter: 'G', 
+                clue: "Apellido de la Dra. que dirige la colección 'Nueva Carrera Docente', donde se inscribe el texto 'La Educación Ayer, Hoy y Mañana'.", 
+                answer: "GVIRTZ" 
+            },
+            { 
+                letter: 'H', 
+                clue: "Se refiere a la complicación y diversidad del medio ambiente que rodea al alumno, siendo uno de los obstáculos a los que debe enfrentarse el maestro tradicional. (La Educación Ayer, Hoy y Mañana)", 
+                answer: "HETEROGENEIDAD" 
+            },
+            { 
+                letter: 'I', 
+                clue: "En la teoría de la conciencia de Paulo Freire, se refiere a la fase en la cual la conciencia no se distingue de la realidad, es decir, está totalmente fusionada o sumergida en ella. (1985_Paulo_Freire_y_la_Educacion_Liberadora)", 
+                answer: "INTRANSITIVA" 
+            },
+            { 
+                letter: 'J', 
+                clue: "Acción que se incluye en el nivel de **Evaluación** de la Taxonomía de Bloom, la cual implica la formulación de un **juicio** sobre el valor de materiales o métodos. (Niveles de la taxonomía de Bloom)", 
+                answer: "JUZGAR" 
+            },
+            { 
+                letter: 'K', 
+                clue: "Apellido del pedagogo estadounidense, discípulo de John Dewey, conocido por ser el principal defensor y sistematizador del **Método de Proyectos**. (Escuela nueva-escuela tradicional)", 
+                answer: "KILPATRICK" 
+            },
+            { 
+                letter: 'L', 
+                clue: "Tipo de educación propuesta por Paulo Freire, opuesta a la 'educación bancaria', que busca la toma de conciencia del sujeto oprimido para su transformación social. (Dialnet-PauloFreireEnLaEducacionPopularLatinoamericana)", 
+                answer: "LIBERADORA" 
+            },
+            { 
+                letter: 'M', 
+                clue: "En el pensamiento de Paulo Freire, se refiere al conjunto de procedimientos dialógicos cuya aplicación real incluye la **autorevisión**, la **autocrítica** y el ajuste constante. (Formacion_docente_Paulo_Freire)", 
+                answer: "METODO" 
+            },
+            { 
+                letter: 'N', 
+                clue: "En la obra de Freire, se refiere al carácter intrínseco de la existencia humana que, al estar en el mundo, se relaciona con él, siendo consciente y capaz de reconocerse como un ser inacabado. (Paulo_Freire_pedagogia_del_oprimido)", 
+                answer: "NATURALEZA" 
+            },
+            { 
+                letter: 'O', 
+                clue: "Comienza por O: En la ZDP, describe el rol que cumplen los adultos o compañeros más avanzados al proporcionar **apoyo, dirección y organización** del aprendizaje del menor, hasta que este puede dominar las facetas por sí solo. (Teoría Sociocultural de Lev Vygotsky)", 
+                answer: "ORIENTACION" 
+            },
+            { 
+                letter: 'P', 
+                clue: "Comienza por P: Uno de los dos tipos de variables que, junto con el entorno, interactúan en la base del desarrollo humano, según esta teoría, influyendo en el desarrollo cognitivo, moral y relacional. (Teoría Ecológica de Urie Bronfenbrenner)", 
+                answer: "PERSONALES" 
+            },
+            { 
+                letter: 'Q', 
+                clue: "Contiene la Q: Se refiere a las variadas que se tienen de la realidad y que han permitido que los procesos investigativos ocurran desde diferentes perspectivas a lo largo de las épocas. (Referencia a Kuhn)", 
+                answer: "INQUIETUDES" 
+            },
+            { 
+                letter: 'R', 
+                clue: "Comienza por R: La pretensión de cambiar la escuela y el proceso de enseñanza-aprendizaje busca hacer esto con todas las prácticas pedagógicas contemporáneas.", 
+                answer: "RECONSTRUIR" 
+            },
+            { 
+                letter: 'S', 
+                clue: "Comienza por S: Adjetivo que describe los contextos que, junto a los pedagógicos, son recreados por las corrientes pedagógicas contemporáneas para dar respuesta a los desequilibrios y exigencias del contexto actual. (Las corrientes pedagógicas contemporáneas)", 
+                answer: "SOCIALES" 
+            },
+            { 
+                letter: 'T', 
+                clue: "Comienza por T: En la teoría de la conciencia de Paulo Freire, es la fase de la conciencia que es capaz de 'tomar distancia' de la realidad y percibirla críticamente, en oposición a la conciencia intransitiva.", 
+                answer: "TRANSITIVA" 
+            },
+            { 
+                letter: 'U', 
+                clue: "Comienza por U: En contraste con el currículo estático y sin significado de la pedagogía tradicional (que el constructivismo critica), se busca que el aprendizaje tenga esto para la vida del hombre, es decir, que sea aplicable y funcional.", 
+                answer: "UTILIDAD" 
+            },
+            { 
+                letter: 'V', 
+                clue: "Comienza por V: Cualidad que tienen las corrientes pedagógicas contemporáneas al describir, explicar y conducir lo pedagógico, dándoles solidez y presencia en el tiempo a sus discursos, ya que el debate sobre la escuela sigue abierto y son referentes ante las exigencias del contexto. (Las corrientes pedagógicas contemporáneas)", 
+                answer: "VIGENCIA" 
+            },
+            { 
+                letter: 'X', 
+                clue: "Contiene la X: Instrumento pedagógico que permite ilustrar y ordenar de manera visual la jerarquía y las relaciones entre los distintos conceptos de un tema. (Placeholder)", 
+                answer: "TAXONOMIA" 
+            },
+            { 
+                letter: 'Y', 
+                clue: "Contiene la Y: Apellido del psicólogo soviético fundador de la teoría sociocultural, fundamental para entender la Zona de Desarrollo Próximo. (Placeholder)", 
+                answer: "VYGOTSKY" 
+            },
+            { 
+                letter: 'Z', 
+                clue: "Contiene la Z: Se refiere a la zona entre el nivel de desarrollo real (lo que el alumno sabe hacer solo) y el nivel de desarrollo potencial (lo que puede hacer con ayuda). (Placeholder)", 
+                answer: "ZDP" 
+            }
+        ];
+        
+        // El rosco estándar usa 26 letras (se filtró 'W' de la lista original)
+        const roscoData_26 = roscoData.filter(item => item.letter !== 'W');
+
+
+        let currentIndex = -1;
+        const alphabet = roscoData_26.map(item => item.letter);
+        const container = document.getElementById('roscoContainer');
+        const count = alphabet.length; // Total de letras: 26
+        let correctAnswers = 0;
+        let incorrectAnswers = 0;
+
+        /**
+         * @description Función para calcular la posición de cada círculo.
+         */
+        function calculatePosition(index, total, roscoSize, circleSize) {
+            const angle = (index / total) * 2 * Math.PI; 
+            const radius = roscoSize / 2 - (circleSize / 2);
+
+            const x = radius * Math.sin(angle);
+            const y = radius * Math.cos(angle);
+
+            return {
+                left: roscoSize / 2 + x,
+                top: roscoSize / 2 - y 
+            };
+        }
+
+        /**
+         * @description Calcula la nota actual y la muestra en el centro.
+         */
+        function updateGradeDisplay() {
+            const totalLetters = count; // 26
+            
+            // La nota se calcula sobre el total de aciertos / 26 * 10
+            const grade = (correctAnswers / totalLetters) * 10;
+            
+            // Mostrar "N/A" hasta que se conteste la primera pregunta
+            let displayGrade = "N/A";
+
+            if (correctAnswers > 0 || incorrectAnswers > 0) {
+                // Redondeamos a un decimal para la calificación (Ej: 8.5)
+                displayGrade = grade.toFixed(1);
+            }
+
+            const gradeElement = document.getElementById('currentGradeDisplay');
+            if (gradeElement) {
+                gradeElement.innerHTML = `Nota: <strong>${displayGrade}</strong> / 10`;
+            }
+        }
+
+
+        // 1. Renderiza los círculos del rosco 
+        function renderRosco() {
+            // Eliminar círculos existentes para redibujar
+            Array.from(container.querySelectorAll('.letter-circle')).forEach(circle => circle.remove());
+
+            // Obtener el tamaño del rosco y del círculo dinámicamente
+            let roscoSize = parseFloat(window.getComputedStyle(container).width);
+            
+            // Usar un círculo temporal para obtener el tamaño real aplicado por CSS
+            let tempCircle;
+            if (roscoData_26.length > 0) {
+                 tempCircle = document.createElement('div');
+                 tempCircle.classList.add('letter-circle');
+                 container.appendChild(tempCircle); 
+            }
+            const circleSize = tempCircle ? parseFloat(window.getComputedStyle(tempCircle).width) : 30;
+            if (tempCircle) {
+                container.removeChild(tempCircle); 
+            }
+
+
+            roscoData_26.forEach((item, index) => {
+                const pos = calculatePosition(index, count, roscoSize, circleSize);
+
+                const circle = document.createElement('div');
+                circle.classList.add('letter-circle');
+                circle.id = 'letter-' + item.letter;
+                circle.textContent = item.letter;
+                circle.style.left = `${pos.left}px`;
+                circle.style.top = `${pos.top}px`;
+                circle.dataset.index = index;
+                circle.onclick = () => selectLetter(index);
+                container.appendChild(circle);
+
+                // Restaurar estados si ya estaban contestadas
+                const previousState = roscoData_26[index].state;
+                if (previousState) {
+                    circle.classList.add(previousState);
+                }
+            });
+
+            // Actualizar el display de la nota al inicio
+            updateGradeDisplay();
+
+            // Seleccionar el primer elemento o el actual
+            if (currentIndex === -1 && count > 0) {
+                 selectLetter(0);
+            } else if (currentIndex !== -1) {
+                 selectLetter(currentIndex);
+            }
+        }
+
+        // 2. Selecciona una letra
+        function selectLetter(index) {
+            if (currentIndex >= 0) {
+                const prevCircle = document.getElementById('letter-' + roscoData_26[currentIndex].letter);
+                prevCircle.classList.remove('current');
+            }
+
+            currentIndex = index;
+
+            const currentCircle = document.getElementById('letter-' + roscoData_26[currentIndex].letter);
+            if (!currentCircle.classList.contains('correct') && !currentCircle.classList.contains('incorrect')) {
+                 currentCircle.classList.add('current');
+            }
+           
+            const currentItem = roscoData_26[currentIndex];
+            
+            document.getElementById('currentLetter').textContent = currentItem.letter;
+            document.getElementById('currentClue').innerHTML = currentItem.clue;
+            
+            document.getElementById('answerInput').value = '';
+            document.getElementById('answerInput').focus();
+        }
+
+        // 3. Comprueba la respuesta
+        function checkAnswer() {
+            if (currentIndex === -1) return;
+
+            const inputElement = document.getElementById('answerInput');
+            const userAnswer = inputElement.value.trim().toUpperCase();
+            const currentItem = roscoData_26[currentIndex];
+
+            // Normalización para ignorar tildes en la comparación
+            const normalizedAnswer = currentItem.answer.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+            const normalizedUserAnswer = userAnswer.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+            const currentCircle = document.getElementById('letter-' + currentItem.letter);
+
+            // Evitar re-contestar una letra ya contestada
+            if (currentCircle.classList.contains('correct') || currentCircle.classList.contains('incorrect')) {
+                moveToNextUnanswered();
+                return; 
+            }
+
+            if (normalizedUserAnswer === normalizedAnswer) {
+                currentCircle.classList.add('correct');
+                currentCircle.classList.remove('incorrect', 'current');
+                roscoData_26[currentIndex].state = 'correct';
+                correctAnswers++;
+            } else {
+                currentCircle.classList.add('incorrect');
+                currentCircle.classList.remove('correct', 'current');
+                roscoData_26[currentIndex].state = 'incorrect';
+                incorrectAnswers++;
+            }
+
+            // AQUI SE ACTUALIZA LA NOTA DESPUÉS DE CADA RESPUESTA
+            updateGradeDisplay();
+
+            moveToNextUnanswered();
+            checkIfFinished();
+        }
+
+        // 4. Mueve el foco a la siguiente letra no contestada 
+        function moveToNextUnanswered() {
+            let nextIndex = currentIndex;
+            const startSearch = currentIndex;
+            let found = false;
+
+            for (let i = 1; i <= count; i++) {
+                nextIndex = (startSearch + i) % count;
+                const nextLetter = roscoData_26[nextIndex].letter;
+                const nextCircle = document.getElementById('letter-' + nextLetter);
+
+                if (nextCircle && !nextCircle.classList.contains('correct') && !nextCircle.classList.contains('incorrect')) {
+                    selectLetter(nextIndex);
+                    found = true;
+                    break;
+                }
+            }
+
+            if (!found) {
+                // Si no hay más sin contestar, se queda en la última o vuelve al inicio
+                selectLetter(currentIndex); 
+            }
+        }
+
+        // 5. Comprueba si el juego ha terminado
+        function checkIfFinished() {
+            // Se comprueba que las 26 letras estén contestadas
+            if (correctAnswers + incorrectAnswers === count) {
+                
+                const finalGrade = ((correctAnswers / count) * 10).toFixed(1);
+                const message = `¡Juego Terminado! 🏆 Aciertos: ${correctAnswers}, Fallos: ${incorrectAnswers}. Tu Nota Final es: ${finalGrade} / 10`;
+                
+                // Muestra el resultado final en el panel lateral
+                document.getElementById('currentClue').innerHTML = `<h3>${message}</h3><p>¡Gracias por jugar!</p>`;
+                document.getElementById('currentLetter').textContent = '';
+                
+                // Ocultar input y botón al terminar
+                document.getElementById('answerInput').style.display = 'none';
+                document.querySelector('.response-controls button').style.display = 'none';
+                
+                // Alerta con el resultado
+                alert(message);
+            }
+        }
+
+        // Asegurar que el rosco se renderice y se reposicione si la ventana cambia de tamaño (responsividad)
+        window.addEventListener('resize', renderRosco);
+        window.onload = renderRosco;
+    </script>
+</body>
+</html>
